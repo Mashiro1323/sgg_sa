@@ -286,8 +286,9 @@ class BoxList(object):
 
 if __name__ == "__main__":
     bbox = BoxList([[0, 0, 10, 10], [0, 0, 5, 5]], (10, 10))
+    # print(bbox[0])
     s_bbox = bbox.resize((5, 5))
-    print(s_bbox)
+    print(bbox.bbox[0])
     print(s_bbox.bbox)
 
     t_bbox = bbox.transpose(0)

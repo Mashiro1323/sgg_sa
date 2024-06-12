@@ -18,7 +18,7 @@ class VGDataset(torch.utils.data.Dataset):
 
     def __init__(self, split, img_dir, roidb_file, dict_file, image_file, transforms=None,
                 filter_empty_rels=True, num_im=-1, num_val_im=5000,
-                filter_duplicate_rels=True, filter_non_overlap=True, flip_aug=False, custom_eval=False, custom_path=''):
+                filter_duplicate_rels=True, filter_non_overlap=True, flip_aug=False, custom_eval=False, custom_path='', saliency_eval=False,sa_dataset_dir=None):
         """
         Torch dataset for VisualGenome
         Parameters:
@@ -33,6 +33,9 @@ class VGDataset(torch.utils.data.Dataset):
             num_im: Number of images in the entire dataset. -1 for all images.
             num_val_im: Number of images in the validation set (must be less than num_im
                unless num_im is -1.)
+            
+            saliency_eval: If enable saliency evaluation
+            sa_dataset_dir: folder containing all saliency map images of VG
         """
         # for debug
         # num_im = 10000
@@ -51,6 +54,12 @@ class VGDataset(torch.utils.data.Dataset):
 
         self.ind_to_classes, self.ind_to_predicates, self.ind_to_attributes = load_info(dict_file) # contiguous 151, 51 containing __background__
         self.categories = {i : self.ind_to_classes[i] for i in range(len(self.ind_to_classes))}
+
+        #WYS add: load saliency map filenames
+        self.saliency_eval = saliency_eval
+        if self.saliency_eval:
+            self.sa_dataset_dir = sa_dataset_dir
+            self.sa_filenames, _ = load_saliencymap_filenames(sa_dataset_dir,image_file)
 
         self.custom_eval = custom_eval
         if self.custom_eval:
@@ -136,7 +145,49 @@ class VGDataset(torch.utils.data.Dataset):
         # correct_img_info(self.img_dir, self.image_file)
         return self.img_info[index]
 
-    def get_groundtruth(self, index, evaluation=False, flip_img=False):
+
+    def get_salienymap_oneimg(self, index):
+        # WYS add: Get saliency map of one img
+        if not self.saliency_eval:
+            print('='*20, ' ERROR! To get saliency of box must set saliency_eval=True!')
+            return
+        
+        img_info = self.get_img_info(index)
+        sa_map_name = '{}.jpg'.format(img_info['image_id'])
+        if os.path.exists(sa_map_name):
+            sa_map_img = Image.open(sa_map_name)
+
+            # 确保图像是单通道
+            if sa_map_img.mode != 'L':
+                raise ValueError("The image is not in single channel (grayscale) format.")
+
+            # 将图像转换为torch
+            sa_map = torch.from_numpy(np.array(sa_map_img))
+        else:
+            w, h = img_info['width'], img_info['height']
+            sa_map = torch.from_numpy(np.zeros((h,w)))
+        
+        return sa_map
+
+    def get_saliency_of_box(self, index, box, evalution=False):
+        # WYS add: 获取一张图片中，所有框对应的显著性平均值。
+        sa_map = self.get_salienymap_oneimg(self, index)
+        # 获取box的数量
+        num_boxes = box.shape[0]
+
+        # 初始化存储每个框的平均值的张量
+        boxes_sa_one_img = torch.zeros(num_boxes, dtype=torch.float)
+
+        # 计算每个框对应区域的平均值
+        for i in range(num_boxes):
+            xmin, ymin, xmax, ymax = box[i]
+            # 切片 sa_map 获取框的区域，并计算平均值
+            region = sa_map[ymin:ymax+1, xmin:xmax+1]
+            boxes_sa_one_img[i] = region.mean()
+        return boxes_sa_one_img
+
+
+    def get_groundtruth(self, index, evaluation=False, flip_img=False, saliency_on=False):
         img_info = self.get_img_info(index)
         w, h = img_info['width'], img_info['height']
         # important: recover original box from BOX_SCALE
@@ -151,6 +202,10 @@ class VGDataset(torch.utils.data.Dataset):
 
         target.add_field("labels", torch.from_numpy(self.gt_classes[index]))
         target.add_field("attributes", torch.from_numpy(self.gt_attributes[index]))
+
+        #WYS add: 在gt里添加显著性信息
+        if saliency_on == True:
+            target.add_field("saliencys",self.get_saliency_of_box(self, index, box))
 
         relation = self.relationships[index].copy() # (num_rel, 3)
         if self.filter_duplicate_rels:
@@ -318,6 +373,31 @@ def load_image_filenames(img_dir, image_file):
     assert len(img_info) == 108073
     return fns, img_info
 
+
+def load_saliencymap_filenames(sa_dataset_dir, image_file):
+    """
+    Loads the image filenames from saliency map dataset corresponding to visual genome from the JSON file that contains them.
+    This matches the preprocessing in scene-graph-TF-release/data_tools/vg_to_imdb.py.
+    Parameters:
+        image_file: JSON file. Elements contain the param "image_id".
+        sa_dataset_dir: directory where the saliency map images are located
+    Return: 
+        List of filenames corresponding to the good images
+    """
+    with open(image_file, 'r') as f:
+        im_data = json.load(f)
+
+    fns = []
+    img_info = []
+    for i, img in enumerate(im_data):
+        basename = '{}.jpg'.format(img['image_id'])
+        filename = os.path.join(sa_dataset_dir, basename)
+        if os.path.exists(filename):
+            fns.append(filename)
+            img_info.append(img)
+    assert len(fns) == 108079
+    assert len(img_info) == 108079
+    return fns, img_info
 
 def load_graphs(roidb_file, split, num_im, num_val_im, filter_empty_rels, filter_non_overlap):
     """

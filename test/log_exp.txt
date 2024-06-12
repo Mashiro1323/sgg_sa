@@ -1,0 +1,23 @@
+2023-09-17 04:42:55,160 maskrcnn_benchmark INFO: Trigger MAX_DECAY_STEP at iteration 30000.
+2023-09-17 04:42:55,270 maskrcnn_benchmark INFO: Total training time: 6:24:47.987553 (0.4618 s / it)
+2023-09-17 04:42:56,708 maskrcnn_benchmark INFO: Start evaluation on VG_stanford_filtered_with_attribute_test dataset(26446 images).
+2023-09-17 05:43:19,856 maskrcnn_benchmark INFO: Total run time: 1:00:23.147760 (0.13700173030613247 s / img per device, on 1 devices)
+2023-09-17 05:43:19,857 maskrcnn_benchmark INFO: Model inference time: 0:59:06.206520 (0.13409235876284306 s / img per device, on 1 devices)
+2023-09-17 05:50:36,509 maskrcnn_benchmark INFO: 
+====================================================================================================
+Detection evaluation mAp=0.6712
+====================================================================================================
+SGG eval:     R @ 20: 0.3651;     R @ 50: 0.4093;     R @ 100: 0.4205;  for mode=sgcls, type=Recall(Main).
+SGG eval:  ng-R @ 20: 0.4204;  ng-R @ 50: 0.5256;  ng-R @ 100: 0.5789;  for mode=sgcls, type=No Graph Constraint Recall(Main).
+SGG eval:    zR @ 20: 0.0051;    zR @ 50: 0.0094;    zR @ 100: 0.0126;  for mode=sgcls, type=Zero Shot Recall.
+SGG eval: ng-zR @ 20: 0.0075; ng-zR @ 50: 0.0245; ng-zR @ 100: 0.0508;  for mode=sgcls, type=No Graph Constraint Zero Shot Recall.
+SGG eval:    mR @ 20: 0.1670;    mR @ 50: 0.1979;    mR @ 100: 0.2076;  for mode=sgcls, type=Mean Recall.
+----------------------- Details ------------------------
+(above:0.0997) (across:0.1429) (against:0.1532) (along:0.2278) (and:0.2155) (at:0.4048) (attached to:0.1382) (behind:0.4742) (belonging to:0.0000) (between:0.0417) (carrying:0.4425) (covered in:0.4000) (covering:0.2768) (eating:0.3239) (flying in:0.0000) (for:0.1709) (from:0.0282) (growing on:0.0000) (hanging from:0.1492) (has:0.5262) (holding:0.3429) (in:0.2010) (in front of:0.0417) (laying on:0.2056) (looking at:0.1252) (lying on:0.0000) (made of:0.0000) (mounted on:0.0000) (near:0.2090) (of:0.4311) (on:0.4280) (on back of:0.0000) (over:0.1769) (painted on:0.0000) (parked on:0.6436) (part of:0.0000) (playing:0.0000) (riding:0.5993) (says:0.0000) (sitting on:0.2326) (standing on:0.1583) (to:0.3320) (under:0.3197) (using:0.2442) (walking in:0.0070) (walking on:0.4437) (watching:0.1980) (wearing:0.6379) (wears:0.0000) (with:0.1844) 
+--------------------------------------------------------
+SGG eval: ng-mR @ 20: 0.1933; ng-mR @ 50: 0.2742; ng-mR @ 100: 0.3403;  for mode=sgcls, type=No Graph Constraint Mean Recall.
+----------------------- Details ------------------------
+(above:0.4520) (across:0.2619) (against:0.2742) (along:0.4014) (and:0.2959) (at:0.4827) (attached to:0.4626) (behind:0.5292) (belonging to:0.1175) (between:0.1181) (carrying:0.5436) (covered in:0.4440) (covering:0.3562) (eating:0.4033) (flying in:0.0000) (for:0.3127) (from:0.0751) (growing on:0.0000) (hanging from:0.3628) (has:0.6245) (holding:0.4890) (in:0.3881) (in front of:0.2590) (laying on:0.4449) (looking at:0.3551) (lying on:0.0306) (made of:0.0312) (mounted on:0.0000) (near:0.4332) (of:0.6105) (on:0.6070) (on back of:0.0355) (over:0.3272) (painted on:0.1837) (parked on:0.6998) (part of:0.0000) (playing:0.0000) (riding:0.6180) (says:0.0000) (sitting on:0.4313) (standing on:0.4289) (to:0.4454) (under:0.4584) (using:0.4100) (walking in:0.3134) (walking on:0.5542) (watching:0.2988) (wearing:0.6392) (wears:0.5747) (with:0.4291) 
+--------------------------------------------------------
+SGG eval:     A @ 20: 0.4276;     A @ 50: 0.4287;     A @ 100: 0.4287;  for mode=sgcls, type=TopK Accuracy.
+====================================================================================================

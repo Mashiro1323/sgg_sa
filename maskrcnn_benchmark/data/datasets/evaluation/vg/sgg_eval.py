@@ -91,6 +91,70 @@ class SGRecall(SceneGraphEvaluation):
             self.result_dict[mode + '_recall'][k].append(rec_i)
 
         return local_container
+    
+
+"""
+Saliency metric from WYS
+"""
+class SGSaliency(SceneGraphEvaluation):
+    def __init__(self, result_dict):
+        super(SGSaliency, self).__init__(result_dict)
+        
+
+    def register_container(self, mode):
+        self.result_dict[mode + '_saliency'] = {20: [], 50: [], 100: []}
+
+    def generate_print_string(self, mode):
+        result_str = 'SGG eval: '
+        for k, v in self.result_dict[mode + '_saliency'].items():
+            result_str += '    Sa @ %d: %.4f; ' % (k, np.mean(v))
+        result_str += ' for mode=%s, type=Saliency.' % mode
+        result_str += '\n'
+        return result_str
+
+    # TODO
+    def calculate_recall(self, global_container, local_container, mode):
+        pred_rel_inds = local_container['pred_rel_inds']
+        rel_scores = local_container['rel_scores']
+        gt_rels = local_container['gt_rels']
+        gt_classes = local_container['gt_classes']
+        gt_boxes = local_container['gt_boxes']
+        pred_classes = local_container['pred_classes']
+        pred_boxes = local_container['pred_boxes']
+        obj_scores = local_container['obj_scores']
+
+        iou_thres = global_container['iou_thres']
+
+        pred_rels = np.column_stack((pred_rel_inds, 1+rel_scores[:,1:].argmax(1)))
+        pred_scores = rel_scores[:,1:].max(1)
+
+        gt_triplets, gt_triplet_boxes, _ = _triplet(gt_rels, gt_classes, gt_boxes)
+        local_container['gt_triplets'] = gt_triplets
+        local_container['gt_triplet_boxes'] = gt_triplet_boxes
+
+        pred_triplets, pred_triplet_boxes, pred_triplet_scores = _triplet(
+                pred_rels, pred_classes, pred_boxes, pred_scores, obj_scores)
+
+        # Compute recall. It's most efficient to match once and then do recall after
+        pred_to_gt = _compute_pred_matches(
+            gt_triplets,
+            pred_triplets,
+            gt_triplet_boxes,
+            pred_triplet_boxes,
+            iou_thres,
+            phrdet=mode=='phrdet',
+        )
+        local_container['pred_to_gt'] = pred_to_gt
+
+        for k in self.result_dict[mode + '_recall']:
+            # the following code are copied from Neural-MOTIFS
+            match = reduce(np.union1d, pred_to_gt[:k])
+            rec_i = float(len(match)) / float(gt_rels.shape[0])
+            self.result_dict[mode + '_recall'][k].append(rec_i)
+
+        return local_container
+    
+
 """
 No Graph Constraint Recall, implement based on:
 https://github.com/rowanz/neural-motifs
