@@ -12,7 +12,7 @@ from maskrcnn_benchmark.data import get_dataset_statistics
 from maskrcnn_benchmark.structures.bounding_box import BoxList
 from maskrcnn_benchmark.structures.boxlist_ops import boxlist_iou
 from maskrcnn_benchmark.utils.miscellaneous import intersect_2d, argsort_desc, bbox_overlaps
-from maskrcnn_benchmark.data.datasets.evaluation.vg.sgg_eval import SGRecall, SGNoGraphConstraintRecall, SGZeroShotRecall, SGNGZeroShotRecall, SGPairAccuracy, SGMeanRecall, SGNGMeanRecall, SGAccumulateRecall
+from maskrcnn_benchmark.data.datasets.evaluation.vg.sgg_eval import SGRecall, SGNoGraphConstraintRecall, SGZeroShotRecall, SGNGZeroShotRecall, SGPairAccuracy, SGMeanRecall, SGNGMeanRecall, SGAccumulateRecall, SGSaliency
 
 def do_vg_evaluation(
     cfg,
@@ -122,6 +122,13 @@ def do_vg_evaluation(
         eval_recall.register_container(mode)
         evaluator['eval_recall'] = eval_recall
 
+        # saliency
+        if saliency_on:
+            eval_saliency = SGSaliency(result_dict)
+            eval_saliency.register_container(mode)
+            evaluator['eval_saliency'] = eval_saliency
+            
+
         # no graphical constraint
         eval_nog_recall = SGNoGraphConstraintRecall(result_dict)
         eval_nog_recall.register_container(mode)
@@ -162,13 +169,11 @@ def do_vg_evaluation(
         global_container['iou_thres'] = iou_thres
         global_container['attribute_on'] = attribute_on
         global_container['num_attributes'] = num_attributes
+        # add saliency map 
         global_container['saliency_on'] = saliency_on
         
         for groundtruth, prediction in zip(groundtruths, predictions):
-            if saliency_on:
-                evaluate_relation_of_one_image(groundtruth, prediction, global_container, evaluator,saliency_on=True)
-            else:
-                evaluate_relation_of_one_image(groundtruth, prediction, global_container, evaluator)
+            evaluate_relation_of_one_image(groundtruth, prediction, global_container, evaluator)
         
         # calculate mean recall
         eval_mean_recall.calculate_mean_recall(mode)
@@ -181,6 +186,8 @@ def do_vg_evaluation(
         result_str += eval_ng_zeroshot_recall.generate_print_string(mode)
         result_str += eval_mean_recall.generate_print_string(mode)
         result_str += eval_ng_mean_recall.generate_print_string(mode)
+        if saliency_on:
+            result_str += eval_saliency.generate_print_string(mode)
         
         if cfg.MODEL.ROI_RELATION_HEAD.USE_GT_BOX:
             result_str += eval_pair_accuracy.generate_print_string(mode)
@@ -227,7 +234,7 @@ def save_output(output_folder, groundtruths, predictions, dataset):
 
 
 
-def evaluate_relation_of_one_image(groundtruth, prediction, global_container, evaluator, saliency_on=False):
+def evaluate_relation_of_one_image(groundtruth, prediction, global_container, evaluator):
     """
     Returns:
         pred_to_gt: Matching from predicate to GT
@@ -236,6 +243,7 @@ def evaluate_relation_of_one_image(groundtruth, prediction, global_container, ev
     """
     #unpack all inputs
     mode = global_container['mode']
+    saliency_on = global_container['saliency_on']
 
     local_container = {}
     local_container['gt_rels'] = groundtruth.get_field('relation_tuple').long().detach().cpu().numpy()
@@ -248,7 +256,7 @@ def evaluate_relation_of_one_image(groundtruth, prediction, global_container, ev
     local_container['gt_classes'] = groundtruth.get_field('labels').long().detach().cpu().numpy()           # (#gt_objs, )
     if saliency_on:
         #WYS add: 在local_container里添加上saliencys信息
-        local_container['saliencys'] = groundtruth.get_field('saliencys').long().detach().cpu().numpy()     # (#gt_objs, )
+        local_container['saliencys_of_box'] = groundtruth.get_field('saliencys_of_box').long().detach().cpu().numpy()     # (#gt_objs, )
 
     # about relations
     local_container['pred_rel_inds'] = prediction.get_field('rel_pair_idxs').long().detach().cpu().numpy()  # (#pred_rels, 2)
@@ -314,6 +322,9 @@ def evaluate_relation_of_one_image(groundtruth, prediction, global_container, ev
     # NOTE: this is the MAIN evaluation function, it must be run first (several important variables need to be update)
     local_container = evaluator['eval_recall'].calculate_recall(global_container, local_container, mode)
 
+    # Saliency
+    if saliency_on:
+        evaluator['eval_saliency'].calculate_recall(global_container, local_container, mode)
     # No Graph Constraint
     evaluator['eval_nog_recall'].calculate_recall(global_container, local_container, mode)
     # GT Pair Accuracy
