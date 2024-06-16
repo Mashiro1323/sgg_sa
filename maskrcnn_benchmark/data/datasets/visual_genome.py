@@ -169,9 +169,9 @@ class VGDataset(torch.utils.data.Dataset):
         
         return sa_map
 
-    def get_saliency_of_box(self, index, box, evalution=False):
+    def get_saliency_of_box(self, index, box):
         # WYS add: 获取一张图片中，所有框对应的显著性平均值。
-        sa_map = self.get_salienymap_oneimg(self, index)
+        sa_map = self.get_salienymap_oneimg(index)
         # 获取box的数量
         num_boxes = box.shape[0]
 
@@ -205,7 +205,7 @@ class VGDataset(torch.utils.data.Dataset):
 
         #WYS add: 在gt里添加显著性信息
         if saliency_on == True:
-            target.add_field("saliencys_of_box",self.get_saliency_of_box(self, index, box))
+            target.add_field("saliencys_of_box",self.get_saliency_of_box(index, box))
 
         relation = self.relationships[index].copy() # (num_rel, 3)
         if self.filter_duplicate_rels:
