@@ -205,7 +205,7 @@ class VGDataset(torch.utils.data.Dataset):
 
         #WYS add: 在gt里添加显著性信息
         if saliency_on == True:
-            target.add_field("saliencys",self.get_saliency_of_box(self, index, box))
+            target.add_field("saliencys_of_box",self.get_saliency_of_box(self, index, box))
 
         relation = self.relationships[index].copy() # (num_rel, 3)
         if self.filter_duplicate_rels:
@@ -246,7 +246,7 @@ class VGDataset(torch.utils.data.Dataset):
 def get_VG_statistics(img_dir, roidb_file, dict_file, image_file, must_overlap=True):
     train_data = VGDataset(split='train', img_dir=img_dir, roidb_file=roidb_file, 
                         dict_file=dict_file, image_file=image_file, num_val_im=5000, 
-                        filter_duplicate_rels=False)
+                        filter_duplicate_rels=False,saliency_eval=True,sa_dataset_dir=None)
     num_obj_classes = len(train_data.ind_to_classes)
     num_rel_classes = len(train_data.ind_to_predicates)
     fg_matrix = np.zeros((num_obj_classes, num_obj_classes, num_rel_classes), dtype=np.int64)
