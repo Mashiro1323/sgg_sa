@@ -36,6 +36,8 @@ def do_vg_evaluation(
             mode = 'sgcls'
     else:
         mode = 'sgdet'
+    # WYS add: get saliency_on
+    saliency_on = cfg.MODEL.SALIENCY_ON
 
     num_rel_category = cfg.MODEL.ROI_RELATION_HEAD.NUM_CLASSES
     multiple_preds = cfg.TEST.RELATION.MULTIPLE_PREDS
@@ -160,9 +162,13 @@ def do_vg_evaluation(
         global_container['iou_thres'] = iou_thres
         global_container['attribute_on'] = attribute_on
         global_container['num_attributes'] = num_attributes
+        global_container['saliency_on'] = saliency_on
         
         for groundtruth, prediction in zip(groundtruths, predictions):
-            evaluate_relation_of_one_image(groundtruth, prediction, global_container, evaluator)
+            if saliency_on:
+                evaluate_relation_of_one_image(groundtruth, prediction, global_container, evaluator,saliency_on=True)
+            else:
+                evaluate_relation_of_one_image(groundtruth, prediction, global_container, evaluator)
         
         # calculate mean recall
         eval_mean_recall.calculate_mean_recall(mode)
@@ -221,7 +227,7 @@ def save_output(output_folder, groundtruths, predictions, dataset):
 
 
 
-def evaluate_relation_of_one_image(groundtruth, prediction, global_container, evaluator):
+def evaluate_relation_of_one_image(groundtruth, prediction, global_container, evaluator, saliency_on=False):
     """
     Returns:
         pred_to_gt: Matching from predicate to GT
@@ -240,6 +246,9 @@ def evaluate_relation_of_one_image(groundtruth, prediction, global_container, ev
 
     local_container['gt_boxes'] = groundtruth.convert('xyxy').bbox.detach().cpu().numpy()                   # (#gt_objs, 4)
     local_container['gt_classes'] = groundtruth.get_field('labels').long().detach().cpu().numpy()           # (#gt_objs, )
+    if saliency_on:
+        #WYS add: 在local_container里添加上saliencys信息
+        local_container['saliencys'] = groundtruth.get_field('saliencys').long().detach().cpu().numpy()     # (#gt_objs, )
 
     # about relations
     local_container['pred_rel_inds'] = prediction.get_field('rel_pair_idxs').long().detach().cpu().numpy()  # (#pred_rels, 2)
@@ -249,6 +258,7 @@ def evaluate_relation_of_one_image(groundtruth, prediction, global_container, ev
     local_container['pred_boxes'] = prediction.convert('xyxy').bbox.detach().cpu().numpy()                  # (#pred_objs, 4)
     local_container['pred_classes'] = prediction.get_field('pred_labels').long().detach().cpu().numpy()     # (#pred_objs, )
     local_container['obj_scores'] = prediction.get_field('pred_scores').detach().cpu().numpy()              # (#pred_objs, )
+    
     
 
     # to calculate accuracy, only consider those gt pairs

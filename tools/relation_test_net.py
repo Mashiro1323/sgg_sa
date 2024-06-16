@@ -84,9 +84,6 @@ def main():
         iou_types = iou_types + ("relations", )
     if cfg.MODEL.ATTRIBUTE_ON:
         iou_types = iou_types + ("attributes", )
-    # WYS added
-    if cfg.MODEL.SALIENCY_ON:
-        iou_types = iou_types + ("saliency", )
     
     output_folders = [None] * len(cfg.DATASETS.TEST)
 

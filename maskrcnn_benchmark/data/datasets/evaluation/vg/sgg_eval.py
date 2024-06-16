@@ -125,8 +125,21 @@ class SGSaliency(SceneGraphEvaluation):
 
         iou_thres = global_container['iou_thres']
 
+        saliencys_of_box = local_container['saliencys_of_box']
+
         pred_rels = np.column_stack((pred_rel_inds, 1+rel_scores[:,1:].argmax(1)))
         pred_scores = rel_scores[:,1:].max(1)
+
+        # 从 gt_rels 提取主语和宾语的索引
+        subject_ids = gt_rels[:, 0]
+        object_ids = gt_rels[:, 1]
+
+        # 使用这些索引从 saliencys_of_box 中提取主语和宾语的 saliency 值
+        subject_saliencys = saliencys_of_box[subject_ids]
+        object_saliencys = saliencys_of_box[object_ids]
+
+        # 将主语和宾语的 saliency 值相加
+        relation_saliencys = subject_saliencys + object_saliencys
 
         gt_triplets, gt_triplet_boxes, _ = _triplet(gt_rels, gt_classes, gt_boxes)
         local_container['gt_triplets'] = gt_triplets
@@ -146,11 +159,13 @@ class SGSaliency(SceneGraphEvaluation):
         )
         local_container['pred_to_gt'] = pred_to_gt
 
-        for k in self.result_dict[mode + '_recall']:
+        for k in self.result_dict[mode + '_saliency']:
             # the following code are copied from Neural-MOTIFS
-            match = reduce(np.union1d, pred_to_gt[:k])
-            rec_i = float(len(match)) / float(gt_rels.shape[0])
-            self.result_dict[mode + '_recall'][k].append(rec_i)
+            match = reduce(np.union1d, pred_to_gt[:k])  # 存储前k个预测结果匹配上的gt结果列表
+            saliency_sum = 0
+            for gt_idx in match:
+                saliency_sum += relation_saliencys[gt_idx]
+            self.result_dict[mode + '_saliency'][k].append(saliency_sum)
 
         return local_container
     
