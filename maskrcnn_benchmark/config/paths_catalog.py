@@ -162,6 +162,9 @@ class DatasetCatalog(object):
             args['flip_aug'] = cfg.MODEL.FLIP_AUG
             args['custom_eval'] = cfg.TEST.CUSTUM_EVAL
             args['custom_path'] = cfg.TEST.CUSTUM_PATH
+            if cfg.MODEL.SALIENCY_ON:
+                args['saliency_eval'] = True
+                args['sa_dataset_dir'] = "Saliency map dataset path."
             return dict(
                 factory="VGDataset",
                 args=args,
