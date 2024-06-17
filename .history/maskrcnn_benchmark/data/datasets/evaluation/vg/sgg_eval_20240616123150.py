@@ -162,7 +162,6 @@ class SGSaliency(SceneGraphEvaluation):
         for k in self.result_dict[mode + '_saliency']:
             # the following code are copied from Neural-MOTIFS
             match = reduce(np.union1d, pred_to_gt[:k])  # 存储前k个预测结果匹配上的gt结果列表
-            match = match.astype(int)
             saliency_sum = 0
             for gt_idx in match:
                 saliency_sum += relation_saliencys[gt_idx]

@@ -52,7 +52,7 @@ def do_vg_evaluation(
         # recover original size which is before transform
         predictions[image_id] = prediction.resize((image_width, image_height))
 
-        gt = dataset.get_groundtruth(image_id, evaluation=True,saliency_on=saliency_on)
+        gt = dataset.get_groundtruth(image_id, evaluation=True)
         groundtruths.append(gt)
 
     save_output(output_folder, groundtruths, predictions, dataset)

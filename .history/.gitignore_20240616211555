@@ -6,8 +6,6 @@ _ext
 maskrcnn_benchmark.egg-info/
 build/
 dist/
-cocoapi/
-apex/
 
 # ipython/jupyter notebooks
 #*.ipynb

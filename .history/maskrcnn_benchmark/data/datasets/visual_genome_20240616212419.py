@@ -180,7 +180,7 @@ class VGDataset(torch.utils.data.Dataset):
 
         # 计算每个框对应区域的平均值
         for i in range(num_boxes):
-            xmin, ymin, xmax, ymax = map(int,box[i])
+            xmin, ymin, xmax, ymax = box[i]
             # 切片 sa_map 获取框的区域，并计算平均值
             region = sa_map[ymin:ymax+1, xmin:xmax+1]
             boxes_sa_one_img[i] = region.mean()

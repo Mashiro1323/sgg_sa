@@ -180,7 +180,7 @@ class VGDataset(torch.utils.data.Dataset):
 
         # 计算每个框对应区域的平均值
         for i in range(num_boxes):
-            xmin, ymin, xmax, ymax = map(int,box[i])
+            xmin, ymin, xmax, ymax = box[i]
             # 切片 sa_map 获取框的区域，并计算平均值
             region = sa_map[ymin:ymax+1, xmin:xmax+1]
             boxes_sa_one_img[i] = region.mean()
@@ -395,9 +395,8 @@ def load_saliencymap_filenames(sa_dataset_dir, image_file):
         if os.path.exists(filename):
             fns.append(filename)
             img_info.append(img)
-
-    assert len(fns) == 108073
-    assert len(img_info) == 108073
+    assert len(fns) == 108079
+    assert len(img_info) == 108079
     return fns, img_info
 
 def load_graphs(roidb_file, split, num_im, num_val_im, filter_empty_rels, filter_non_overlap):

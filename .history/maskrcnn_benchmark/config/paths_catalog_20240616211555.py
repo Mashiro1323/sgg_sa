@@ -164,7 +164,7 @@ class DatasetCatalog(object):
             args['custom_path'] = cfg.TEST.CUSTUM_PATH
             if cfg.MODEL.SALIENCY_ON:
                 args['saliency_eval'] = True
-                args['sa_dataset_dir'] = "/home/ubuntu/scene-graph-benchmark/datasets/vg/VG_Saliency"
+                args['sa_dataset_dir'] = "Saliency map dataset path."
             return dict(
                 factory="VGDataset",
                 args=args,
