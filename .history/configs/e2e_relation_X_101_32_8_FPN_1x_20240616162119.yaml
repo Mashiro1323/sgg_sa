@@ -98,7 +98,6 @@ DATASETS:
   TRAIN: ("VG_stanford_filtered_with_attribute_train",)
   VAL: ("VG_stanford_filtered_with_attribute_val",)
   TEST: ("VG_stanford_filtered_with_attribute_test",)
-  TO_TEST: None
 DATALOADER:
   SIZE_DIVISIBILITY: 32
 SOLVER:
