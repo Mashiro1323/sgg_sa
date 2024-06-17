@@ -171,7 +171,7 @@ class VGDataset(torch.utils.data.Dataset):
 
     def get_saliency_of_box(self, index, box):
         # WYS add: 获取一张图片中，所有框对应的显著性平均值。
-        sa_map = self.get_salienymap_oneimg(index).float()
+        sa_map = self.get_salienymap_oneimg(index)
         # 获取box的数量
         num_boxes = box.shape[0]
 
