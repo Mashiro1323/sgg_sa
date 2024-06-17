@@ -107,7 +107,7 @@ class SGSaliency(SceneGraphEvaluation):
     def generate_print_string(self, mode):
         result_str = 'SGG eval: '
         for k, v in self.result_dict[mode + '_saliency'].items():
-            result_str += '    Sa @ %d: %.4f; ' % (k, np.mean(v))
+            result_str += '   Sa @ %d: %.4f; ' % (k, np.mean(v))
         result_str += ' for mode=%s, type=Saliency.' % mode
         result_str += '\n'
         return result_str
@@ -140,6 +140,10 @@ class SGSaliency(SceneGraphEvaluation):
 
         # 将主语和宾语的 saliency 值相加
         relation_saliencys = subject_saliencys + object_saliencys
+        # 归一化 relation_saliencys
+        max_saliency = relation_saliencys.max()
+        min_saliency = relation_saliencys.min()
+        normalized_saliencys = (relation_saliencys - min_saliency) / (max_saliency - min_saliency)
 
         gt_triplets, gt_triplet_boxes, _ = _triplet(gt_rels, gt_classes, gt_boxes)
         local_container['gt_triplets'] = gt_triplets
@@ -163,9 +167,9 @@ class SGSaliency(SceneGraphEvaluation):
             # the following code are copied from Neural-MOTIFS
             match = reduce(np.union1d, pred_to_gt[:k])  # 存储前k个预测结果匹配上的gt结果列表
             match = match.astype(int)
-            saliency_sum = 0
+            saliency_sum = 0.0
             for gt_idx in match:
-                saliency_sum += relation_saliencys[gt_idx]
+                saliency_sum += float(normalized_saliencys[gt_idx])  # 确保累加的是浮点数
             self.result_dict[mode + '_saliency'][k].append(saliency_sum)
 
         return local_container
