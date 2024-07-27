@@ -140,6 +140,7 @@ class SGSaliency(SceneGraphEvaluation):
 
         # 将主语和宾语的 saliency 值相加
         relation_saliencys = subject_saliencys + object_saliencys
+        relation_saliencys = relation_saliencys.astype(np.float32)
 
         if relation_saliencys.size == 0:
             raise ValueError("relation_saliencys is empty.")
@@ -173,14 +174,26 @@ class SGSaliency(SceneGraphEvaluation):
 
         for k in self.result_dict[mode + '_saliency']:
             # the following code are copied from Neural-MOTIFS
-            match = reduce(np.union1d, pred_to_gt[:k])  # 存储前k个预测结果匹配上的gt结果列表
-            match = match.astype(int)
-            saliency_sum = 0.0
-            for gt_idx in match:
-                saliency_sum += float(normalized_saliencys[gt_idx])  # 确保累加的是浮点数
-            self.result_dict[mode + '_saliency'][k].append(saliency_sum)
+            # match = reduce(np.union1d, pred_to_gt[:k])  # 存储前k个预测结果匹配上的gt结果列表
+            # match = match.astype(int)
+            # saliency_sum = 0.0
+            # for gt_idx in match:
+            #     saliency_sum += float(normalized_saliencys[gt_idx])  # 确保累加的是浮点数
+            # self.result_dict[mode + '_saliency'][k].append(saliency_sum)
+            self.result_dict[mode + '_saliency'][k].append(self.calculate_topK_with_weights(k,pred_to_gt,normalized_saliencys))
 
         return local_container
+    
+    def calculate_topK_with_weights(self, k, pred_to_gt, normalized_saliencys):
+        saliency_sum = 0.0
+        while k >= 10:
+            weights = 1.0 - 0.01*(k-10)
+            match = reduce(np.union1d, pred_to_gt[k-10:k])  # 存储前k个预测结果匹配上的gt结果列表
+            match = match.astype(int)
+            for gt_idx in match:
+                saliency_sum += float(normalized_saliencys[gt_idx]) * float(weights)  # 确保累加的是浮点数
+            k = k-10
+        return saliency_sum
     
 
 """

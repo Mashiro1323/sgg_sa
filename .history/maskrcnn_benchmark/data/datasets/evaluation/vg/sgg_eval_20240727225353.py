@@ -107,7 +107,7 @@ class SGSaliency(SceneGraphEvaluation):
     def generate_print_string(self, mode):
         result_str = 'SGG eval: '
         for k, v in self.result_dict[mode + '_saliency'].items():
-            result_str += '    Sa @ %d: %.4f; ' % (k, np.mean(v))
+            result_str += '   Sa @ %d: %.4f; ' % (k, np.mean(v))
         result_str += ' for mode=%s, type=Saliency.' % mode
         result_str += '\n'
         return result_str
@@ -140,6 +140,19 @@ class SGSaliency(SceneGraphEvaluation):
 
         # 将主语和宾语的 saliency 值相加
         relation_saliencys = subject_saliencys + object_saliencys
+        relation_saliencys = relation_saliencys.astype(np.float32)
+
+        if relation_saliencys.size == 0:
+            raise ValueError("relation_saliencys is empty.")
+
+        # 归一化 relation_saliencys
+        max_saliency = relation_saliencys.max()
+        min_saliency = relation_saliencys.min()
+        if max_saliency == min_saliency:
+            normalized_saliencys = np.full_like(relation_saliencys, 0.5, dtype=np.float32)
+        else:
+            normalized_saliencys = (relation_saliencys.astype(np.float32) - min_saliency) / (max_saliency - min_saliency)
+
 
         gt_triplets, gt_triplet_boxes, _ = _triplet(gt_rels, gt_classes, gt_boxes)
         local_container['gt_triplets'] = gt_triplets
@@ -161,14 +174,30 @@ class SGSaliency(SceneGraphEvaluation):
 
         for k in self.result_dict[mode + '_saliency']:
             # the following code are copied from Neural-MOTIFS
-            match = reduce(np.union1d, pred_to_gt[:k])  # 存储前k个预测结果匹配上的gt结果列表
-            match = match.astype(int)
-            saliency_sum = 0
-            for gt_idx in match:
-                saliency_sum += relation_saliencys[gt_idx]
-            self.result_dict[mode + '_saliency'][k].append(saliency_sum)
+            # match = reduce(np.union1d, pred_to_gt[:k])  # 存储前k个预测结果匹配上的gt结果列表
+            # match = match.astype(int)
+            # saliency_sum = 0.0
+            # for gt_idx in match:
+            #     saliency_sum += float(normalized_saliencys[gt_idx])  # 确保累加的是浮点数
+            # self.result_dict[mode + '_saliency'][k].append(saliency_sum)
+            self.result_dict[mode + '_saliency'][k].append(self.calculate_topK_with_weights(k,pred_to_gt,normalized_saliencys))
 
         return local_container
+    
+    def calculate_topK_with_weights(self, k, pred_to_gt, normalized_saliencys):
+        if pred_to_gt is None:
+            return 0.0
+        saliency_sum = 0.0
+        while k >= 10:
+            weight = 1.0 - 0.01*(k-10)
+            if k == 10:
+                weight += 0.5
+            match = reduce(np.union1d, pred_to_gt[k-10:k])  # 存储前k个预测结果匹配上的gt结果列表
+            match = match.astype(int)
+            for gt_idx in match:
+                saliency_sum += float(normalized_saliencys[gt_idx]) * float(weight)  # 确保累加的是浮点数
+            k = k-10
+        return saliency_sum
     
 
 """
